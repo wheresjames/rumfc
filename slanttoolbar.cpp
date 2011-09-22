@@ -228,7 +228,7 @@ BOOL CSlantToolbar::CreateToolbar(CWnd *pParent)
 
 	// Create the toolbar
 	RECT rectCtrl = { 0, 0, 0, 0 };
-	CStatic::Create( "Toolbar", SS_NOTIFY | WS_CHILD | WS_VISIBLE, rectCtrl, pParent );
+	CStatic::Create( "", SS_NOTIFY | WS_CHILD | WS_VISIBLE, rectCtrl, pParent );
 
 	// Must have a window
 	if ( !::IsWindow( GetSafeHwnd() ) )
