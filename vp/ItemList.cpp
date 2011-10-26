@@ -124,7 +124,11 @@ BOOL CItemList::AllocateIndex(DWORD size)
 
 		// Allocate memory
 		m_pIndex = new LPLISTITEMINFO[ 16 ];
-		if ( m_pIndex == NULL ) return FALSE;
+		if ( m_pIndex == NULL ) 
+			return FALSE;
+
+		// Initialize pointers
+		ZeroMemory( m_pIndex, sizeof( LPLISTITEMINFO ) * 16 );
 
 		// Save size
 		m_dwSize = 16;
@@ -133,22 +137,34 @@ BOOL CItemList::AllocateIndex(DWORD size)
 
 	} // end if
 
-	// Do we already have enough room
-	while ( size > m_dwSize )
-	{
-		// Allocate more memory
-		LPLISTITEMINFO	*list = new LPLISTITEMINFO[ m_dwSize << 1 ];
-		if ( list == NULL ) return FALSE;
+	// Do we already have enough room?
+	if ( m_dwSize >= size )
+		return TRUE;
 
-		// Copy the pointers
-		memcpy( list, m_pIndex, ( m_dwSize * sizeof( DWORD ) ) );
+	// Calculate the next size
+	DWORD dwNewSize = m_dwSize;
+	while ( size > dwNewSize )
+		dwNewSize <<= 1;
 
-		// Use the new list
-		delete [] m_pIndex;
-		m_pIndex = list;
-		m_dwSize <<= 1;
+	// Just in case
+	if ( 0 >= dwNewSize )
+		return FALSE;
 
-	} // end while
+	// Allocate more memory
+	LPLISTITEMINFO	*list = new LPLISTITEMINFO[ dwNewSize ];
+	if ( list == NULL ) 
+		return FALSE;
+
+	// Copy the used pointers
+	memcpy( list, m_pIndex, ( m_dwSize * sizeof( LPLISTITEMINFO ) ) );
+
+	// Zero the rest
+	ZeroMemory( &list[ m_dwSize ], ( dwNewSize - m_dwSize ) * sizeof( LPLISTITEMINFO ) );
+
+	// Use the new list
+	delete [] m_pIndex;
+	m_pIndex = list;
+	m_dwSize = dwNewSize;
 
 	return TRUE;
 }
@@ -1173,7 +1189,7 @@ BOOL CItemList::SetSubItemBckColor(DWORD index, DWORD subitem, COLORREF rgb)
 	return TRUE;
 }
 
-BOOL CItemList::SetItemData(DWORD item, DWORD data)
+BOOL CItemList::SetItemData(DWORD item, LPVOID data)
 {
 	if ( item >= m_dwPtr || m_pIndex[ item ] == NULL ) 
 		return FALSE;
@@ -1183,7 +1199,7 @@ BOOL CItemList::SetItemData(DWORD item, DWORD data)
 	return TRUE;
 }
 
-DWORD CItemList::GetItemData(DWORD item)
+LPVOID CItemList::GetItemData(DWORD item)
 {
 	if ( item >= m_dwPtr || m_pIndex[ item ] == NULL ) 
 		return 0;
@@ -1222,7 +1238,7 @@ DWORD CItemList::GetUncollapsedLines()
 	return lines;
 }
 
-BOOL CItemList::GetSubItemData(DWORD item, DWORD subitem, LPDWORD pdwData)
+BOOL CItemList::GetSubItemData(DWORD item, DWORD subitem, LPVOID * pdwData)
 {
 	// Sanity check
 	if ( pdwData == NULL ) return FALSE;
@@ -1236,7 +1252,7 @@ BOOL CItemList::GetSubItemData(DWORD item, DWORD subitem, LPDWORD pdwData)
 	return TRUE;
 }
 
-BOOL CItemList::SetSubItemData(DWORD item, DWORD subitem, DWORD data)
+BOOL CItemList::SetSubItemData(DWORD item, DWORD subitem, LPVOID data)
 {
 	// Get sub item
 	LPLISTSUBITEMINFO plsii = GetSubItem( item, subitem );

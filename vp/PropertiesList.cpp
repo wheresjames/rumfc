@@ -204,7 +204,7 @@ void CPropertiesList::LoadList()
 	//			if ( ppi->type == PROPTYPE_FONT )
 	//				GetListCtrl().AddSubItem( n, ppi->name, NULL, SIT_TEXT, 0, MAXDWORD, MAXDWORD, (LPLOGFONT)ppi->data );
 				GetListCtrl().AddSubItem( n, ppi->name );
-				GetListCtrl().SetItemData( n, (DWORD)ppi );
+				GetListCtrl().SetItemData( n, ppi );
 
 				char str[ CWF_STRSIZE ] = { 0 };
 

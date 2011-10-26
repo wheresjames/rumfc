@@ -49,7 +49,9 @@ CDrawSlantToolbar::CDrawSlantToolbar()
 
 CDrawSlantToolbar::~CDrawSlantToolbar()
 {
-
+	CTlLocalLock ll( m_lstFlash );
+	if ( ll.IsLocked() )
+		m_lstFlash.Destroy();
 }
 
 BOOL CDrawSlantToolbar::Add(UINT uCmd, HICON hIcon, LPCTSTR pText, LPCTSTR pTip, LPBOOL pBool, HICON hPressed, DWORD flags, HICON hFlash)

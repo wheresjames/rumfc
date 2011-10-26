@@ -54,7 +54,7 @@ typedef struct tagLISTSUBITEMINFO
 	COLORREF			rgbtext;
 	COLORREF			rgbbck;
 
-	DWORD				user;
+	LPVOID				user;
 
 	LPLOGFONT			pfont;
 	
@@ -78,7 +78,7 @@ typedef struct tagLISTITEMINFO
 
 	DWORD				flags;
 
-	DWORD				user;
+	LPVOID				user;
 
 	DWORD				subitems;
 	LPLISTSUBITEMINFO	head;
@@ -187,15 +187,15 @@ private:
 
 public:
 
-	BOOL SetSubItemData( DWORD item, DWORD subitem, DWORD data );
-	BOOL GetSubItemData( DWORD item, DWORD subitem, LPDWORD pdwData );
+	BOOL SetSubItemData( DWORD item, DWORD subitem, LPVOID data );
+	BOOL GetSubItemData( DWORD item, DWORD subitem, LPVOID * pdwData );
 	
 	void DefaultColors();
 	void AutoDefaultColors( BOOL b ) { m_bAutoDefaultColors = b; }
 	DWORD GetUncollapsedLines();
 	BOOL SetSubItemText( DWORD index, DWORD subitem, LPCTSTR pText );
-	DWORD GetItemData( DWORD item );
-	BOOL SetItemData( DWORD item, DWORD data );
+	LPVOID GetItemData( DWORD item );
+	BOOL SetItemData( DWORD item, LPVOID data );
 	BOOL SetSubItemBckColor( DWORD index, DWORD subitem, COLORREF rgb );
 	BOOL SetSubItemTextColor( DWORD index, DWORD subitem, COLORREF rgb );
 	long GetTotalWidth();
