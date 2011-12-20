@@ -592,7 +592,8 @@ BOOL CDrawSlantToolbar::Draw(LPSLANTTOOLBARINFO psti, HDC hDC, LPRECT pRect, BOO
 			CopyRect( &pFi->rect, pRect );
 		} // end if
 	} // end if
-	else m_lstFlash.erase( psti );
+	else if ( m_lstFlash.Size() ) 
+		m_lstFlash.erase( psti );
 
 	// Highlight background if needed
 	if ( ( m_bHiLightBtn && ( psti->f1 & STIF1_HILIGHT ) != 0 ) ||
@@ -838,8 +839,13 @@ BOOL CDrawSlantToolbar::NeedFlash()
 	// Check each item for flashy state
 	BOOL bNeedFlash = FALSE;
 
+	// Are there any flash handlers?
+	if ( !m_lstFlash.Size() )
+		return FALSE;
+
 	CTlLocalLock ll( m_lstFlash );
-	if ( !ll.IsLocked() ) return FALSE;
+	if ( !ll.IsLocked() ) 
+		return FALSE;
 
 	try
 	{
