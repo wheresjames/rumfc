@@ -173,7 +173,12 @@ private:
 
 	BOOL			m_bAutoDestroy;
 
+	BOOL			m_bCorrectOverhang;
+
 public:
+
+	void CorrectOverhang( BOOL b ) { m_bCorrectOverhang = b; }
+
 	void UnselectMenu();
 	BOOL IsMenuRight( long x, long y );
 
@@ -226,6 +231,7 @@ public:
 
 	HWND			m_hDropWnd;
 	HWND			m_hLastWnd;
+
 
 };
 

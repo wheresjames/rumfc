@@ -60,10 +60,10 @@ BOOL CHttpSession::OnProcessRead()
 	LPCTSTR pStr = m_hr.varVariables.GetStr( "User-Agent" );
 
 	// Dump the rx buffer if no content
-	if ( dwContentSize == 0 ) Rx().Destroy();
+//	if ( dwContentSize == 0 ) Rx().Destroy();
 
 	// Wait for content if needed
-	else if ( Rx().GetMaxRead() < dwContentSize )
+	if ( 0 < dwContentSize && Rx().GetMaxRead() < dwContentSize )
 		return FALSE;
 
 	// Read post variables if needed
@@ -84,6 +84,20 @@ BOOL CHttpSession::OnProcessRead()
 	// Initialize header values
 	DefaultHeader();
 
+	// Persistent connection?
+	BOOL bPersist = FALSE;
+	LPCTSTR pCon = m_hr.varVariables.GetStr( "Connection" );
+	if ( !pCon || !*pCon ) pCon = m_hr.varVariables.GetStr( "connection" );
+	if ( pCon && *pCon )
+		if ( strstr( pCon, "Keep-Alive" ) || strstr( pCon, "keep-alive" ) )
+			bPersist = TRUE;
+
+	bPersist = TRUE;
+			
+	// Signal that we intend to keep the session alive
+	if ( bPersist )
+		m_hr.varHeader.AddVar( "Connection", "Keep-Alive" );
+
 	// Process the request
 	if ( OnProcessRequest() )
 	{
@@ -98,8 +112,11 @@ BOOL CHttpSession::OnProcessRead()
 
 	} // end if
 
-	// Disconnect from server
-	Done();
+	// Prepare connection
+	if ( !bPersist )
+		Done();
+	else if ( m_hr.dwType != HTTP_REQUEST_TYPE_POST )
+		Rx().AdvanceReadPtr( dwContentSize );
 
 	return TRUE;
 }
@@ -247,24 +264,24 @@ LPCTSTR CHttpSession::GetErrString(DWORD err)
 	switch( err )
 	{
 		case HTTP_OK :
-			return "HTTP/1.0 200 OK\r\n";
+			return "HTTP/1.1 200 OK\r\n";
 			break;
 
 		case HTTP_FORBIDDEN :
-			return "HTTP/1.0 403 Forbidden\r\n";
+			return "HTTP/1.1 403 Forbidden\r\n";
 			break;
 		
 		case HTTP_NOT_FOUND :
-			return "HTTP/1.0 404 Document Not Found\r\n";
+			return "HTTP/1.1 404 Document Not Found\r\n";
 			break;
 
 		case HTTP_SERVER_ERROR :
 		default :
-			return "HTTP/1.0 500 Server Error\r\n";
+			return "HTTP/1.1 500 Server Error\r\n";
 			break;
 	}
 
-	return "HTTP/1.0 500 Server Error\r\n";
+	return "HTTP/1.1 500 Server Error\r\n";
 }
 
 

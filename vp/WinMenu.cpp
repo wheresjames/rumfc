@@ -72,6 +72,8 @@ CWinMenu::CWinMenu()
 	m_dwLine = 0;
 
 	m_bAutoDestroy = TRUE;
+	
+	m_bCorrectOverhang = FALSE;
 
 	m_hTick = NULL;
 	m_hCheck = NULL;
@@ -345,13 +347,17 @@ BOOL CWinMenu::GetMenuRect(long x, long y, LPRECT pRect)
 	pRect->bottom = y + h;
 
 	// Correct if drifting offscreen
-	long ox = 0, oy = 0;
-	if ( pRect->left < 10 ) ox = 10 - pRect->left;
-	if ( pRect->top < 10 ) oy = 10 - pRect->top;
+	if ( m_bCorrectOverhang	)
+	{
+		long ox = 0, oy = 0;
+		if ( pRect->left < 10 ) ox = 10 - pRect->left;
+		if ( pRect->top < 10 ) oy = 10 - pRect->top;
 
-	// Offset rect if needed
-	if ( ox || oy ) OffsetRect( pRect, ox, oy );
-		
+		// Offset rect if needed
+		if ( ox || oy ) 
+			OffsetRect( pRect, ox, oy );
+	} // end if
+	
 	return TRUE;
 }
 
@@ -1453,25 +1459,33 @@ BOOL CWinMenu::GetMenuPosition(LPRECT pAvoid, LPRECT pRect)
 	else y = pAvoid->bottom - oy;
 
 	// Check for overhang
-	if ( ( x + ( rect.right - rect.left ) ) > sx )
-		x = pAvoid->left - ( rect.right - rect.left ) + ox;
-	if ( y < 0 ) y = pAvoid->top - oy;
+	if ( m_bCorrectOverhang )
+	{
+		if ( ( x + ( rect.right - rect.left ) ) > sx )
+			x = pAvoid->left - ( rect.right - rect.left ) + ox;
+		if ( y < 0 ) y = pAvoid->top - oy;
+	} // end if
 
 	// Get the final position
 	GetMenuRect( x, y, pRect );
 
-	long offx = 0, offy = 0;
+	if ( m_bCorrectOverhang )
+	{
+		long offx = 0, offy = 0;
+		
+		// Overhangging bottom?
+		if ( pRect->right > sx ) offx = sx - pRect->right;
+		if ( pRect->bottom > sy ) offy = sy - pRect->bottom;
 
-	// Overhangging bottom?
-	if ( pRect->right > sx ) offx = sx - pRect->right;
-	if ( pRect->bottom > sy ) offy = sy - pRect->bottom;
+		// Overhanging top?
+		if ( ( pRect->left + offx ) < mx ) offx += mx - ( pRect->left + offx );
+		if ( ( pRect->top + offy ) < mx ) offy += mx - ( pRect->top + offy );
 
-	// Overhanging top?
-	if ( ( pRect->left + offx ) < mx ) offx += mx - ( pRect->left + offx );
-	if ( ( pRect->top + offy ) < mx ) offy += mx - ( pRect->top + offy );
+		// Correct menu position if needed
+		if ( offx != 0 || offy != 0 ) 
+			OffsetRect( pRect, offx, offy );
 
-	// Correct menu position if needed
-	if ( offx != 0 || offy != 0 ) OffsetRect( pRect, offx, offy );
+	} // end if
 
 	return TRUE;
 }
