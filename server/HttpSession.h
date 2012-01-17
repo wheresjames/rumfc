@@ -71,6 +71,19 @@ public:
 			dwHttpError = HTTP_OK;
 			ZeroMemory( &ui, sizeof( ui ) );
 		}
+		
+		void Reset()
+		{	dwType = 0; 
+			dVersion = 0;
+			dwHttpError = HTTP_OK;
+			ZeroMemory( &ui, sizeof( ui ) );
+			sDoc = "";
+			sFile = "";
+			varGet.Destroy();
+			varPost.Destroy();
+			varVariables.Destroy();
+			varHeader.Destroy();
+		}
 
 		DWORD			dwType;
 		double			dVersion;
@@ -122,14 +135,24 @@ public:
 
 	void SetServerName( LPCTSTR pServerName ) { m_sServerName = pServerName; }
 
+	/// Resets connection and prepares for another request
+	void ResetConnection();
+
+	/// HTTP request details
 	SHttpRequest				m_hr;
 
 private:
 
+	/// Non-zero if headers have been recieved
 	BOOL						m_bHeaderReceived;
 
+	/// Non-zero if conneciton should persist
+	BOOL						m_bPersist;
+
+	/// Holds reply content
 	CCircBuf					m_bufContent;
 
+	/// The server name
 	std::string					m_sServerName;
 
 };

@@ -20,6 +20,7 @@ CHttpSession::CHttpSession()
 
 	SetAutoTx( FALSE );
 	m_bHeaderReceived = FALSE;
+	m_bPersist = TRUE;
 }
 
 CHttpSession::~CHttpSession()
@@ -41,7 +42,7 @@ BOOL CHttpSession::OnProcessRead()
 		// Wait for the full data
 		DWORD dwErr = ParseHeader( buf, dwBytes );
 		if ( !dwErr ) return FALSE;
-		
+
 		// Everything go ok?
 		if ( dwErr != HTTP_OK ) 
 		{
@@ -84,42 +85,52 @@ BOOL CHttpSession::OnProcessRead()
 	// Initialize header values
 	DefaultHeader();
 
+	// +++ On by default since curl seems to be broken
+	m_bPersist = TRUE;
+
 	// Persistent connection?
-	BOOL bPersist = FALSE;
+	/*
 	LPCTSTR pCon = m_hr.varVariables.GetStr( "Connection" );
 	if ( !pCon || !*pCon ) pCon = m_hr.varVariables.GetStr( "connection" );
 	if ( pCon && *pCon )
 		if ( strstr( pCon, "Keep-Alive" ) || strstr( pCon, "keep-alive" ) )
-			bPersist = TRUE;
+			m_bPersist = TRUE;
+	*/
 
-	bPersist = TRUE;
-			
 	// Signal that we intend to keep the session alive
-	if ( bPersist )
+	if ( m_bPersist )
 		m_hr.varHeader.AddVar( "Connection", "Keep-Alive" );
 
 	// Process the request
 	if ( OnProcessRequest() )
 	{
 		// Send page
-		if ( m_hr.dwHttpError == HTTP_OK ) SendReply();
+		if ( m_hr.dwHttpError == HTTP_OK ) 
+			SendReply();
 
 		// Send the error message
-		else SendErrorMsg( m_hr.dwHttpError, m_hr.sHttpError.c_str() );
-
-		// Start the tx'er
-		StartTx();
+		else 
+			SendErrorMsg( m_hr.dwHttpError, m_hr.sHttpError.c_str() );
 
 	} // end if
 
-	// Prepare connection
-	if ( !bPersist )
-		Done();
-	else if ( m_hr.dwType != HTTP_REQUEST_TYPE_POST )
-		Rx().AdvanceReadPtr( dwContentSize );
-
 	return TRUE;
 }
+
+void CHttpSession::ResetConnection()
+{
+	// Prepare connection
+	if ( !m_bPersist )
+		Done();
+
+	// Flush the read buffer
+	Rx().Destroy();
+
+	// Prepare to read new headers
+	m_hr.Reset();
+	m_bHeaderReceived = FALSE;
+}
+
 
 DWORD CHttpSession::ParseHeader(LPBYTE pBuf, DWORD dwBytes)
 {
@@ -194,7 +205,8 @@ DWORD CHttpSession::ParseHeader(LPBYTE pBuf, DWORD dwBytes)
 	i = CReg::NextLine(	pBuf, dwHeaderSize - i, i );
 
 	// Read in variables if any
-	if ( dwHeaderSize > i ) m_hr.varVariables.ReadMIME( &pBuf[ i ], dwHeaderSize - i );
+	if ( dwHeaderSize > i ) 
+		m_hr.varVariables.ReadMIME( &pBuf[ i ], dwHeaderSize - i );
 
 	// We are done with the header
 	m_bHeaderReceived = TRUE;
@@ -208,9 +220,10 @@ DWORD CHttpSession::ParseHeader(LPBYTE pBuf, DWORD dwBytes)
 
 BOOL CHttpSession::IsHeaderComplete(LPBYTE pBuf, DWORD dwSize, LPDWORD pdwHeaderSize)
 {
-	if ( !dwSize ) return FALSE;
+	if ( !dwSize ) 
+		return FALSE;
 
-	// Search for end of command string '\n\n'
+	// Search for end of command string '\r\n\r\n'
 	for ( DWORD i = 0; i < ( dwSize - 3 ); i++ )
 		if ( pBuf[ i ] == '\r' && pBuf[ i + 1 ] == '\n' &&
 			 pBuf[ i + 2 ] == '\r' && pBuf[ i + 3 ] == '\n' )
@@ -219,7 +232,8 @@ BOOL CHttpSession::IsHeaderComplete(LPBYTE pBuf, DWORD dwSize, LPDWORD pdwHeader
 			pBuf[ i ] = 0;
 
 			// Save header length
-			if ( pdwHeaderSize ) *pdwHeaderSize = i + 3;
+			if ( pdwHeaderSize ) 
+				*pdwHeaderSize = i + 4;
 
 			return TRUE;
 
@@ -241,7 +255,7 @@ BOOL CHttpSession::SetContentType(LPCTSTR pExt)
 
 
 BOOL CHttpSession::SendErrorMsg(DWORD dwError, LPCTSTR pMsg)
-{	
+{
 	// Set the error code
 	SetHttpError( dwError, std::string( pMsg ).c_str() );
 
@@ -353,9 +367,16 @@ BOOL CHttpSession::SendReply()
 	SendHeader();
 
 	// Write out the content
-	BYTE buf[ 1024 ]; DWORD dwRead = 0;
+	DWORD dwRead = 0;
+	BYTE buf[ 16 * 1024 ]; 
 	while ( m_bufContent.Read( buf, sizeof( buf ), &dwRead ) && dwRead )
 		Write( buf, dwRead );
+
+	// Start the tx'er
+	StartTx();
+
+	// Prepare to receive the next request
+	ResetConnection();
 
 	return TRUE;
 

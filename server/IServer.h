@@ -20,6 +20,8 @@ class CIServer :
 // Attributes
 public:
 
+	typedef THList< GUID, CISession > t_sessionlist;
+
 	class _TISessionFactory
 	{
 	public:
@@ -32,7 +34,7 @@ public:
 	public:
 		virtual CISession* CreateSession() { return new T; }
 //		virtual void DeleteSession( CISession* p ) { delete (T*)p; }
-	};		
+	};
 
 // Operations
 public:
@@ -60,6 +62,8 @@ public:
 	{	if ( m_tSessionFactory == NULL ) return NULL;
 		return m_tSessionFactory->CreateSession();
 	}
+
+	t_sessionlist* GetSessionList() { return &m_lstSession; }
 
 protected:
 
@@ -107,7 +111,7 @@ private:
 
 	_TISessionFactory			*m_tSessionFactory;
 
-	THList< GUID, CISession >	m_lstSession;
+	t_sessionlist				m_lstSession;
 
 };
 

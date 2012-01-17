@@ -149,7 +149,7 @@ BOOL CIServer::GetId(GUID *pguid, SOCKADDR *psaAddr)
 
 void CIServer::Cleanup()
 {
-	THList< GUID, CISession >::iterator it = NULL;
+	t_sessionlist::iterator it = NULL;
 	while ( ( it = m_lstSession.next( it ) ) != NULL )
 	{
 		// Lose this node if it's done
