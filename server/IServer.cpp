@@ -18,7 +18,7 @@ static char THIS_FILE[] = __FILE__;
 /////////////////////////////////////////////////////////////////////////////
 // CIServer
 
-CIServer::CIServer()  
+CIServer::CIServer()
 #ifdef ENABLE_SOCKETS
 	: CAsyncWinSock()
 {
@@ -58,7 +58,7 @@ CIServer::~CIServer()
 #endif
 
 	// Lose the session factory
-	if ( m_tSessionFactory ) 
+	if ( m_tSessionFactory )
 	{	delete m_tSessionFactory;
 		m_tSessionFactory = NULL;
 	} // end if
@@ -77,7 +77,7 @@ END_MESSAGE_MAP()
 // CIServer member functions
 
 #ifdef ENABLE_SOCKETS
-BOOL CIServer::OnAccept(int nErr) 
+BOOL CIServer::OnAccept(int nErr)
 #else
 void CIServer::OnAccept(int nErr)
 #endif
@@ -103,7 +103,7 @@ void CIServer::OnAccept(int nErr)
 	SOCKADDR saAddr; int iAddr = sizeof( saAddr );
 
 	try
-	{ 
+	{
 #ifdef ENABLE_SOCKETS
 		if ( !Accept( pNs, &saAddr, &iAddr ) ) _SOCKET_RETURN( FALSE );
 #else
@@ -118,7 +118,7 @@ void CIServer::OnAccept(int nErr)
 
 	// Let the session know it's connected
 	pNs->OnConnect( 0 );
-	
+
 	_SOCKET_RETURN( TRUE );
 }
 
@@ -137,7 +137,7 @@ void CIServer::Destroy()
 BOOL CIServer::GetId(GUID *pguid, SOCKADDR *psaAddr)
 {
 	// Get in address
-	SOCKADDR_IN * pAddrIn = (SOCKADDR_IN*)psaAddr; 	
+	SOCKADDR_IN * pAddrIn = (SOCKADDR_IN*)psaAddr;
 
 	// Just use the address as an id
 	ZeroMemory( pguid, sizeof( GUID ) );
@@ -153,18 +153,18 @@ void CIServer::Cleanup()
 	while ( ( it = m_lstSession.next( it ) ) != NULL )
 	{
 		// Lose this node if it's done
-		if ( 
+		if (
+			(*it)->GetSocket() == INVALID_SOCKET
+			|| (*it)->IsDone()
+			|| (*it)->IsTimeout()
+			)
+		{
 #ifndef ENABLE_SOCKETS
-			(*it)->m_hSocket == INVALID_SOCKET || 
-#endif
-			(*it)->IsDone() )
-		{	
-#ifndef ENABLE_SOCKETS
-			(*it)->Close(); 
+			(*it)->Close();
 #else
 			(*it)->Destroy();
 #endif
-			it = m_lstSession.erase( it ); 
+			it = m_lstSession.erase( it );
 		}
 
 	} // end while
@@ -190,7 +190,7 @@ CISession* CIServer::ConnectTo(LPCTSTR pServer, DWORD dwPort)
 	GUID guidId; SOCKADDR_IN sai;
 	if ( !GetId( &guidId, pServer, dwPort, (SOCKADDR*)&sai ) )
 		return NULL;
-	
+
 	// Create a session object
 	pNs = CreateSession();
 	if ( pNs == NULL ) return NULL;
@@ -200,7 +200,7 @@ CISession* CIServer::ConnectTo(LPCTSTR pServer, DWORD dwPort)
 		// Add session to the list
 		if ( !m_lstSession.push_back( guidId, pNs ) )
 		{	_PTR_DELETE( pNs ); return NULL; }
-		
+
 		// Connect to the client
 #ifdef ENABLE_SOCKETS
 		if ( !pNs->OpenSocket() ) return NULL;
@@ -262,7 +262,7 @@ BOOL CIServer::Start( DWORD dwPort )
 {
 	// Ensure sockets are initialized
 	AfxSocketInit();
-	
+
 	Stop();
 
 #ifdef ENABLE_SOCKETS
@@ -288,7 +288,7 @@ BOOL CIServer::Stop()
 {
 	// Lose client connections
 	Destroy();
-	
+
 	return TRUE;
 }
 

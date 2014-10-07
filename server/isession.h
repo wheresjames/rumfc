@@ -62,6 +62,8 @@ public:
 
 	BOOL IsDone() { return ( m_bDone && !Tx().GetMaxRead() ); }
 
+	BOOL IsTimeout() { return m_dwTime < time( 0 ); }
+
 // Overrides
 public:
 
@@ -119,6 +121,8 @@ private:
 	BOOL									m_bDone;
 
 	CReg									*m_pUserList;
+
+	DWORD									m_dwTime;
 
 };
 

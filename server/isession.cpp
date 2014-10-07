@@ -40,6 +40,8 @@ CISession::CISession()
 	m_bAutoTx = TRUE;
 
 	m_pUserList = NULL;
+
+	m_dwTime = time( 0 ) + 30;
 }
 
 CISession::~CISession()
@@ -213,6 +215,9 @@ void CISession::OnConnect(int nErr)
 
 	// Start any queued data
 	OnTx();
+
+	// Reset timeout
+	m_dwTime = time( 0 ) + 30;
 
 	_SOCKET_RETURN( TRUE );
 }
